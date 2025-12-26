@@ -15,45 +15,71 @@ import {
   Globe,
   Download,
   Upload,
-  FileJson
+  FileJson,
+  Sparkles
 } from 'lucide-react';
 
 // Import from V3 Framework modules
 import useResponsive from './useResponsive';
 
-// ==================== SIMPLE BUTTON ====================
+// ==================== ENHANCED BUTTON ====================
 
 const Button = ({ children, onClick, disabled, variant = 'default', className = '' }) => {
-  const baseClass = "inline-flex items-center justify-center rounded-lg font-medium transition-colors disabled:opacity-50 disabled:pointer-events-none";
-  const variantClass = variant === 'ghost'
-    ? "hover:bg-gray-700 text-gray-400"
-    : "bg-gray-700 hover:bg-gray-600 text-gray-200 border border-gray-600";
+  const baseClass = "inline-flex items-center justify-center rounded-xl font-medium transition-all duration-300 disabled:opacity-50 disabled:pointer-events-none transform hover:scale-105 active:scale-95";
+
+  const variantClasses = {
+    default: "bg-gradient-to-br from-gray-700 to-gray-800 hover:from-gray-600 hover:to-gray-700 text-gray-200 border border-gray-600 shadow-lg hover:shadow-xl",
+    ghost: "hover:bg-gray-700/50 text-gray-400 hover:text-gray-200",
+    primary: "bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 text-white border border-blue-600 shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/50",
+    success: "bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 text-white border border-green-600 shadow-lg shadow-green-500/30 hover:shadow-xl hover:shadow-green-500/50",
+    accent: "bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white border border-purple-600 shadow-lg shadow-purple-500/30 hover:shadow-xl hover:shadow-purple-500/50",
+    light: "bg-gradient-to-br from-stone-200 to-stone-300 hover:from-stone-100 hover:to-stone-200 text-zinc-800 border border-stone-300 shadow-lg hover:shadow-xl"
+  };
 
   return (
     <button
       onClick={onClick}
       disabled={disabled}
-      className={`${baseClass} ${variantClass} ${className}`}
+      className={`${baseClass} ${variantClasses[variant] || variantClasses.default} ${className}`}
     >
       {children}
     </button>
   );
 };
 
-// ==================== CHAT BUBBLE ====================
+// ==================== TYPING INDICATOR ====================
+
+const TypingIndicator = () => {
+  return (
+    <div className="flex justify-start mb-4 px-4 animate-slide-up">
+      <div className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl px-6 py-4 shadow-xl border border-gray-700/50">
+        <div className="flex gap-1.5">
+          <div className="w-2 h-2 bg-blue-400 rounded-full animate-typing" style={{ animationDelay: '0s' }}></div>
+          <div className="w-2 h-2 bg-blue-400 rounded-full animate-typing" style={{ animationDelay: '0.2s' }}></div>
+          <div className="w-2 h-2 bg-blue-400 rounded-full animate-typing" style={{ animationDelay: '0.4s' }}></div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ==================== ENHANCED CHAT BUBBLE ====================
 
 const ChatBubble = ({ message, isUser }) => {
   return (
-    <div className={`flex ${isUser ? 'justify-end' : 'justify-start'} mb-4 px-4`}>
+    <div className={`flex ${isUser ? 'justify-end' : 'justify-start'} mb-4 px-4 animate-slide-up`}>
       <div
-        className={`max-w-[85%] rounded-2xl px-4 py-3 ${
-          isUser ? 'bg-blue-600 text-white' : 'bg-gray-800 text-gray-200'
+        className={`max-w-[85%] rounded-2xl px-5 py-3.5 shadow-xl backdrop-blur-sm transition-all duration-300 hover:scale-[1.02] ${
+          isUser
+            ? 'bg-gradient-to-br from-blue-600 via-blue-600 to-blue-700 text-white shadow-blue-500/30 border border-blue-500/30'
+            : 'bg-gradient-to-br from-gray-800 via-gray-800 to-gray-900 text-gray-100 shadow-gray-900/50 border border-gray-700/50'
         }`}
       >
         <div className="text-sm whitespace-pre-wrap break-words leading-relaxed">
           {message.content}
         </div>
-        <div className={`text-xs mt-2 ${isUser ? 'text-blue-200' : 'text-gray-500'}`}>
+        <div className={`text-xs mt-2 flex items-center gap-1 ${isUser ? 'text-blue-200/80' : 'text-gray-400'}`}>
+          <span className="w-1 h-1 rounded-full bg-current opacity-60"></span>
           {new Date(message.timestamp).toLocaleTimeString([], {
             hour: '2-digit',
             minute: '2-digit'
@@ -70,10 +96,11 @@ function SimpleChatBot() {
   const { isMobile, dimensions } = useResponsive();
   const [selectedModels, setSelectedModels] = useState(0);
   const [inputMessage, setInputMessage] = useState('');
+  const [isTyping, setIsTyping] = useState(false);
   const [messages, setMessages] = useState([
     {
       id: '1',
-      content: 'Hello! This is a test chat bot for JSON file creation.\n\nTry these features:\n• Type messages and send them\n• Export chat to JSON\n• Import JSON to restore chat\n• Test file creation capability',
+      content: '👋 Hello! Welcome to the Enhanced Chat Bot!\n\n✨ Features:\n• Beautiful modern UI with animations\n• Type messages and get instant responses\n• Export chat to JSON files\n• Import previous conversations\n• Fully responsive design\n\nSelect a model to get started!',
       role: 'assistant',
       timestamp: new Date().toISOString()
     }
@@ -89,7 +116,7 @@ function SimpleChatBot() {
   // Auto-scroll to bottom
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+  }, [messages, isTyping]);
 
   // Textarea auto-grow
   const adjustHeight = () => {
@@ -131,17 +158,27 @@ function SimpleChatBot() {
 
     setMessages(prev => [...prev, userMsg]);
     setInputMessage('');
+    setIsTyping(true);
 
-    // Simulate AI response
+    // Simulate AI response with typing indicator
     setTimeout(() => {
+      setIsTyping(false);
       const aiMsg = {
         id: (Date.now() + 1).toString(),
-        content: `Received: "${inputMessage}"\n\nThis is a simulated response. Try exporting the chat to JSON to test file creation!`,
+        content: `✅ Message received: "${inputMessage}"\n\n🤖 This is an enhanced AI response with beautiful styling!\n\n💡 Try exporting the chat to JSON to test the file creation feature.`,
         role: 'assistant',
         timestamp: new Date().toISOString()
       };
       setMessages(prev => [...prev, aiMsg]);
-    }, 800);
+    }, 1500);
+  };
+
+  // Handle Enter key
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
+    }
   };
 
   // ==================== JSON FILE OPERATIONS ====================
@@ -149,17 +186,18 @@ function SimpleChatBot() {
   // Export chat to JSON
   const handleExportJSON = () => {
     const chatData = {
-      version: '1.0',
+      version: '2.0',
       exportDate: new Date().toISOString(),
       metadata: {
         totalMessages: messages.length,
         selectedModels: selectedModels,
-        framework: 'Responsiveness Framework V3',
-        testPurpose: 'JSON file creation test'
+        framework: 'Responsiveness Framework V3 - Enhanced Edition',
+        features: ['Modern UI', 'Animations', 'Gradient Design', 'Typing Indicator']
       },
       messages: messages,
       dimensions: {
         screenWidth: window.innerWidth,
+        isMobile: isMobile,
         currentDimensions: dimensions
       }
     };
@@ -181,7 +219,7 @@ function SimpleChatBot() {
     // Show success message
     const successMsg = {
       id: Date.now().toString(),
-      content: '✅ Chat exported to JSON successfully!\n\nFile created: chat-export-[timestamp].json\n\nThe JSON file includes:\n• All messages\n• Metadata\n• Timestamps\n• Current dimensions',
+      content: '✅ Chat exported successfully!\n\n📁 File: chat-export-[timestamp].json\n\n📊 Contents:\n• All messages with timestamps\n• Metadata and statistics\n• Responsive dimensions\n• Enhanced UI version info',
       role: 'assistant',
       timestamp: new Date().toISOString()
     };
@@ -214,7 +252,7 @@ function SimpleChatBot() {
         // Show success message
         const successMsg = {
           id: Date.now().toString(),
-          content: `✅ Chat imported successfully!\n\nRestored ${chatData.messages.length} messages from ${new Date(chatData.exportDate).toLocaleString()}\n\nJSON file parsing test: PASSED`,
+          content: `✅ Chat imported successfully!\n\n📊 Statistics:\n• ${chatData.messages.length} messages restored\n• Exported: ${new Date(chatData.exportDate).toLocaleString()}\n• Version: ${chatData.version || '1.0'}\n\n✨ All data loaded perfectly!`,
           role: 'assistant',
           timestamp: new Date().toISOString()
         };
@@ -224,7 +262,7 @@ function SimpleChatBot() {
         // Show error message
         const errorMsg = {
           id: Date.now().toString(),
-          content: `❌ Failed to import chat:\n\n${error.message}\n\nPlease ensure the JSON file is valid.`,
+          content: `❌ Import failed!\n\n🔍 Error: ${error.message}\n\n💡 Please ensure you're uploading a valid JSON file exported from this app.`,
           role: 'assistant',
           timestamp: new Date().toISOString()
         };
@@ -244,17 +282,18 @@ function SimpleChatBot() {
 
   const getJSONPreview = () => {
     const chatData = {
-      version: '1.0',
+      version: '2.0',
       exportDate: new Date().toISOString(),
       metadata: {
         totalMessages: messages.length,
         selectedModels: selectedModels,
-        framework: 'Responsiveness Framework V3',
-        testPurpose: 'JSON file creation test'
+        framework: 'Responsiveness Framework V3 - Enhanced Edition',
+        features: ['Modern UI', 'Animations', 'Gradient Design']
       },
       messages: messages.slice(0, 2), // Preview first 2 messages only
       dimensions: {
         screenWidth: window.innerWidth,
+        isMobile: isMobile,
         currentDimensions: {
           rowHeight: dimensions.rowHeight,
           toolbarIconButton: dimensions.toolbarIconButton,
@@ -268,26 +307,50 @@ function SimpleChatBot() {
   };
 
   return (
-    <div className="h-screen bg-gray-950 flex flex-col">
+    <div className="h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950 flex flex-col relative overflow-hidden">
+      {/* Animated background elements */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-0 -left-4 w-72 h-72 bg-blue-500 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-pulse-soft"></div>
+        <div className="absolute top-0 -right-4 w-72 h-72 bg-purple-500 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-pulse-soft" style={{ animationDelay: '1s' }}></div>
+        <div className="absolute -bottom-8 left-20 w-72 h-72 bg-pink-500 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-pulse-soft" style={{ animationDelay: '2s' }}></div>
+      </div>
+
       {/* Header */}
-      <div className="bg-gray-900 border-b border-gray-800 p-4 shrink-0">
-        <h1 className="text-white text-lg font-semibold">Simple Chat Bot</h1>
-        <p className="text-gray-400 text-sm mt-1">
-          {selectedModels} model{selectedModels !== 1 ? 's' : ''} • {messages.length} messages • JSON Test
-        </p>
+      <div className="bg-gradient-to-r from-gray-900/95 via-gray-800/95 to-gray-900/95 backdrop-blur-xl border-b border-gray-700/50 p-4 shrink-0 shadow-2xl relative z-10">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/30">
+              <Sparkles className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <h1 className="text-white text-lg font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+                Enhanced Chat Bot
+              </h1>
+              <p className="text-gray-400 text-sm mt-0.5 flex items-center gap-2">
+                <span className="inline-flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse"></span>
+                  {selectedModels} model{selectedModels !== 1 ? 's' : ''}
+                </span>
+                <span className="text-gray-600">•</span>
+                <span>{messages.length} messages</span>
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto py-4">
+      <div className="flex-1 overflow-y-auto py-6 relative z-10" style={{ scrollbarWidth: 'thin', scrollbarColor: '#374151 transparent' }}>
         {messages.map((msg) => (
           <ChatBubble key={msg.id} message={msg} isUser={msg.role === 'user'} />
         ))}
+        {isTyping && <TypingIndicator />}
         <div ref={messagesEndRef} />
       </div>
 
       {/* Footer */}
       <div
-        className="bg-gray-900 border-t border-gray-800 shrink-0"
+        className="bg-gradient-to-r from-gray-900/95 via-gray-800/95 to-gray-900/95 backdrop-blur-xl border-t border-gray-700/50 shrink-0 shadow-2xl relative z-10"
         style={{ padding: `${dimensions.containerPadding}px` }}
       >
         {/* Toolbar - Mobile Optimized */}
@@ -299,6 +362,7 @@ function SimpleChatBot() {
           <div className="relative">
             <Button
               onClick={() => setShowMenu(!showMenu)}
+              variant="ghost"
               style={{
                 height: `${dimensions.toolbarIconButton}px`,
                 width: `${dimensions.toolbarIconButton}px`
@@ -310,35 +374,37 @@ function SimpleChatBot() {
             {showMenu && (
               <>
                 <div
-                  className="fixed inset-0 z-40"
+                  className="fixed inset-0 z-40 bg-black/20 backdrop-blur-sm animate-fade-in"
                   onClick={() => setShowMenu(false)}
                 />
-                <div className="absolute bottom-full left-0 mb-2 w-48 bg-gray-800 rounded-lg shadow-xl border border-gray-700 z-50">
-                  <button
-                    onClick={() => {
-                      setMessages([{
-                        id: '1',
-                        content: 'New chat started! Ready to test JSON file creation.',
-                        role: 'assistant',
-                        timestamp: new Date().toISOString()
-                      }]);
-                      setShowMenu(false);
-                    }}
-                    className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-700 text-gray-200 text-left"
-                  >
-                    <Plus className="h-4 w-4" />
-                    <span className="text-sm">New Chat</span>
-                  </button>
-                  <button
-                    onClick={() => {
-                      handleViewJSON();
-                      setShowMenu(false);
-                    }}
-                    className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-700 text-gray-200 text-left"
-                  >
-                    <FileJson className="h-4 w-4" />
-                    <span className="text-sm">View JSON</span>
-                  </button>
+                <div className="absolute bottom-full left-0 mb-2 w-52 bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl shadow-2xl border border-gray-700/50 z-50 overflow-hidden animate-scale-in">
+                  <div className="p-1">
+                    <button
+                      onClick={() => {
+                        setMessages([{
+                          id: '1',
+                          content: '✨ New chat started! Ready to help you with anything.',
+                          role: 'assistant',
+                          timestamp: new Date().toISOString()
+                        }]);
+                        setShowMenu(false);
+                      }}
+                      className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-700/50 text-gray-200 text-left rounded-xl transition-all duration-200"
+                    >
+                      <Plus className="h-4 w-4 text-blue-400" />
+                      <span className="text-sm font-medium">New Chat</span>
+                    </button>
+                    <button
+                      onClick={() => {
+                        handleViewJSON();
+                        setShowMenu(false);
+                      }}
+                      className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-700/50 text-gray-200 text-left rounded-xl transition-all duration-200"
+                    >
+                      <FileJson className="h-4 w-4 text-green-400" />
+                      <span className="text-sm font-medium">View JSON</span>
+                    </button>
+                  </div>
                 </div>
               </>
             )}
@@ -348,10 +414,11 @@ function SimpleChatBot() {
           <Button
             onClick={() => setMessages([{
               id: '1',
-              content: 'New chat started!',
+              content: '✨ New chat started!',
               role: 'assistant',
               timestamp: new Date().toISOString()
             }])}
+            variant="ghost"
             style={{
               height: `${dimensions.toolbarIconButton}px`,
               width: `${dimensions.toolbarIconButton}px`
@@ -363,13 +430,13 @@ function SimpleChatBot() {
           {/* Models Button */}
           <Button
             onClick={() => setSelectedModels(prev => prev === 0 ? 3 : 0)}
+            variant={selectedModels > 0 ? "primary" : "default"}
             style={{
               height: `${dimensions.modelsButtonHeight}px`,
               fontSize: `${dimensions.fontSize}px`,
               paddingLeft: `${dimensions.containerPadding}px`,
               paddingRight: `${dimensions.containerPadding}px`
             }}
-            className={selectedModels > 0 ? "bg-blue-600 hover:bg-blue-500 border-blue-600" : ""}
           >
             {selectedModels} Models
           </Button>
@@ -377,11 +444,12 @@ function SimpleChatBot() {
           {/* Bot Icon (when models selected) */}
           {selectedModels > 0 && (
             <Button
+              variant="ghost"
               style={{
                 height: `${dimensions.toolbarIconButton}px`,
                 width: `${dimensions.toolbarIconButton}px`
               }}
-              className="text-cyan-400 hover:text-cyan-300"
+              className="text-cyan-400 hover:text-cyan-300 animate-scale-in"
             >
               <Bot style={{ height: `${dimensions.toolbarIcon}px`, width: `${dimensions.toolbarIcon}px` }} />
             </Button>
@@ -391,11 +459,11 @@ function SimpleChatBot() {
           <Button
             onClick={handleExportJSON}
             disabled={messages.length === 0}
+            variant="success"
             style={{
               height: `${dimensions.toolbarIconButton}px`,
               width: `${dimensions.toolbarIconButton}px`
             }}
-            className="bg-green-700 hover:bg-green-600 border-green-700"
             title="Export to JSON"
           >
             <Download style={{ height: `${dimensions.toolbarIcon}px`, width: `${dimensions.toolbarIcon}px` }} />
@@ -404,11 +472,11 @@ function SimpleChatBot() {
           {/* Import JSON Button */}
           <Button
             onClick={() => fileInputRef.current?.click()}
+            variant="accent"
             style={{
               height: `${dimensions.toolbarIconButton}px`,
               width: `${dimensions.toolbarIconButton}px`
             }}
-            className="bg-purple-700 hover:bg-purple-600 border-purple-700"
             title="Import from JSON"
           >
             <Upload style={{ height: `${dimensions.toolbarIcon}px`, width: `${dimensions.toolbarIcon}px` }} />
@@ -425,6 +493,7 @@ function SimpleChatBot() {
           <div className="relative">
             <Button
               onClick={() => setShowSettings(!showSettings)}
+              variant="ghost"
               style={{
                 height: `${dimensions.toolbarIconButton}px`,
                 width: `${dimensions.toolbarIconButton}px`
@@ -436,43 +505,48 @@ function SimpleChatBot() {
             {showSettings && (
               <>
                 <div
-                  className="fixed inset-0 z-40"
+                  className="fixed inset-0 z-40 bg-black/20 backdrop-blur-sm animate-fade-in"
                   onClick={() => setShowSettings(false)}
                 />
-                <div className="absolute bottom-full left-0 mb-2 w-56 bg-gray-800 rounded-lg shadow-xl border border-gray-700 z-50">
-                  <div className="px-4 py-3 border-b border-gray-700">
-                    <h3 className="text-sm font-semibold text-white">Settings</h3>
+                <div className="absolute bottom-full left-0 mb-2 w-60 bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl shadow-2xl border border-gray-700/50 z-50 overflow-hidden animate-scale-in">
+                  <div className="px-4 py-3 border-b border-gray-700/50 bg-gradient-to-r from-blue-600/10 to-purple-600/10">
+                    <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                      <Settings className="w-4 h-4" />
+                      Settings
+                    </h3>
                   </div>
-                  <button
-                    onClick={() => {
-                      console.log('Presets Setting');
-                      setShowSettings(false);
-                    }}
-                    className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-700 text-gray-200 text-left"
-                  >
-                    <Zap className="h-4 w-4" />
-                    <span className="text-sm">Presets Setting</span>
-                  </button>
-                  <button
-                    onClick={() => {
-                      console.log('Chat Theme');
-                      setShowSettings(false);
-                    }}
-                    className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-700 text-gray-200 text-left"
-                  >
-                    <Palette className="h-4 w-4" />
-                    <span className="text-sm">Chat Theme</span>
-                  </button>
-                  <button
-                    onClick={() => {
-                      handleViewJSON();
-                      setShowSettings(false);
-                    }}
-                    className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-700 text-gray-200 text-left"
-                  >
-                    <FileJson className="h-4 w-4" />
-                    <span className="text-sm">JSON Preview</span>
-                  </button>
+                  <div className="p-1">
+                    <button
+                      onClick={() => {
+                        console.log('Presets Setting');
+                        setShowSettings(false);
+                      }}
+                      className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-700/50 text-gray-200 text-left rounded-xl transition-all duration-200"
+                    >
+                      <Zap className="h-4 w-4 text-yellow-400" />
+                      <span className="text-sm font-medium">Presets Setting</span>
+                    </button>
+                    <button
+                      onClick={() => {
+                        console.log('Chat Theme');
+                        setShowSettings(false);
+                      }}
+                      className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-700/50 text-gray-200 text-left rounded-xl transition-all duration-200"
+                    >
+                      <Palette className="h-4 w-4 text-pink-400" />
+                      <span className="text-sm font-medium">Chat Theme</span>
+                    </button>
+                    <button
+                      onClick={() => {
+                        handleViewJSON();
+                        setShowSettings(false);
+                      }}
+                      className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-700/50 text-gray-200 text-left rounded-xl transition-all duration-200"
+                    >
+                      <FileJson className="h-4 w-4 text-green-400" />
+                      <span className="text-sm font-medium">JSON Preview</span>
+                    </button>
+                  </div>
                 </div>
               </>
             )}
@@ -481,21 +555,21 @@ function SimpleChatBot() {
           {/* Presets Button */}
           <Button
             onClick={() => setShowPresets(!showPresets)}
+            variant="light"
             style={{
               height: `${dimensions.modelsButtonHeight}px`,
               fontSize: `${dimensions.fontSize}px`,
               paddingLeft: `${dimensions.containerPadding}px`,
               paddingRight: `${dimensions.containerPadding}px`
             }}
-            className="bg-stone-300 hover:bg-stone-200 text-zinc-800 border-stone-300"
           >
             Presets
           </Button>
         </div>
 
-        {/* Input Area - Pill Shaped */}
+        {/* Input Area - Enhanced Pill Shape */}
         <div
-          className="flex items-end bg-zinc-200 rounded-full"
+          className="flex items-end bg-gradient-to-r from-zinc-100 via-white to-zinc-100 rounded-full shadow-2xl border border-gray-300/50 transition-all duration-300 hover:shadow-glow"
           style={{
             gap: `${dimensions.gap}px`,
             paddingLeft: `${dimensions.containerPadding / 2}px`,
@@ -511,7 +585,7 @@ function SimpleChatBot() {
               height: `${dimensions.sendButton}px`,
               width: `${dimensions.sendButton}px`
             }}
-            className="shrink-0 hover:bg-zinc-300 text-zinc-500"
+            className="shrink-0 hover:bg-zinc-200 text-zinc-500 hover:text-zinc-700"
           >
             <Paperclip
               style={{
@@ -529,7 +603,7 @@ function SimpleChatBot() {
               height: `${dimensions.sendButton}px`,
               width: `${dimensions.sendButton}px`
             }}
-            className="shrink-0 hover:bg-zinc-300 text-zinc-500"
+            className="shrink-0 hover:bg-zinc-200 text-zinc-500 hover:text-zinc-700"
           >
             <Plug style={{ height: `${dimensions.inputIcon}px`, width: `${dimensions.inputIcon}px` }} />
           </Button>
@@ -540,10 +614,11 @@ function SimpleChatBot() {
               value={inputMessage}
               onChange={(e) => setInputMessage(e.target.value)}
               onInput={adjustHeight}
+              onKeyPress={handleKeyPress}
               placeholder={selectedModels === 0 ? "Select models first..." : "Type your message..."}
               disabled={selectedModels === 0}
               rows={1}
-              className="w-full bg-transparent border-none text-zinc-900 resize-none focus:outline-none disabled:opacity-50 placeholder:text-zinc-500"
+              className="w-full bg-transparent border-none text-zinc-900 resize-none focus:outline-none disabled:opacity-50 placeholder:text-zinc-400 font-medium"
               style={{
                 lineHeight: 1.5,
                 height: `${dimensions.inputHeight}px`,
@@ -562,7 +637,7 @@ function SimpleChatBot() {
               height: `${dimensions.sendButton}px`,
               width: `${dimensions.sendButton}px`
             }}
-            className="shrink-0 hover:bg-zinc-300 text-zinc-500"
+            className="shrink-0 hover:bg-zinc-200 text-zinc-500 hover:text-zinc-700"
           >
             <Mic style={{ height: `${dimensions.inputIcon}px`, width: `${dimensions.inputIcon}px` }} />
           </Button>
@@ -570,11 +645,12 @@ function SimpleChatBot() {
           <Button
             onClick={handleSend}
             disabled={!inputMessage.trim() || selectedModels === 0}
+            variant="ghost"
             style={{
               height: `${isMobile ? dimensions.sendButtonMobile : dimensions.sendButton}px`,
               width: `${isMobile ? dimensions.sendButtonMobile : dimensions.sendButton}px`
             }}
-            className="shrink-0 bg-zinc-700 hover:bg-zinc-600 border-zinc-600 text-zinc-400 hover:text-white disabled:opacity-50"
+            className="shrink-0 bg-gradient-to-br from-zinc-700 to-zinc-800 hover:from-zinc-600 hover:to-zinc-700 border-zinc-600 text-white shadow-lg disabled:opacity-50"
           >
             <ArrowUp style={{ height: `${dimensions.sendIcon}px`, width: `${dimensions.sendIcon}px` }} strokeWidth={2.5} />
           </Button>
@@ -582,10 +658,10 @@ function SimpleChatBot() {
 
         {/* Tip */}
         <p
-          className="text-center text-gray-500 mt-2"
+          className="text-center text-gray-400 mt-2"
           style={{ fontSize: `${dimensions.fontSize * 0.85}px` }}
         >
-          Press Return/Enter for new line • Test JSON export/import features
+          Press Shift+Enter for new line • Enhanced with modern design
         </p>
       </div>
 
@@ -593,32 +669,37 @@ function SimpleChatBot() {
       {showJsonModal && (
         <>
           <div
-            className="fixed inset-0 bg-black/50"
-            style={{ zIndex: 40 }}
+            className="fixed inset-0 bg-black/60 backdrop-blur-md z-40 animate-fade-in"
             onClick={() => setShowJsonModal(false)}
           />
           <div
-            className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-11/12 max-w-2xl bg-gray-900 border border-gray-700 rounded-2xl shadow-2xl"
-            style={{ zIndex: 50, maxHeight: '80vh' }}
+            className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-11/12 max-w-2xl bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 border border-gray-700/50 rounded-3xl shadow-2xl z-50 animate-scale-in"
+            style={{ maxHeight: '80vh' }}
           >
-            <div className="p-4 border-b border-gray-700 flex justify-between items-center">
-              <h2 className="text-lg font-semibold text-white flex items-center gap-2">
+            <div className="p-5 border-b border-gray-700/50 flex justify-between items-center bg-gradient-to-r from-blue-600/10 to-purple-600/10">
+              <h2 className="text-lg font-bold text-white flex items-center gap-2">
                 <FileJson className="h-5 w-5 text-green-400" />
                 JSON Preview
               </h2>
-              <button onClick={() => setShowJsonModal(false)} className="text-gray-400 hover:text-white">
-                <Plus className="h-5 w-5 rotate-45" />
+              <button
+                onClick={() => setShowJsonModal(false)}
+                className="text-gray-400 hover:text-white transition-all duration-200 hover:rotate-90 transform"
+              >
+                <Plus className="h-6 w-6 rotate-45" />
               </button>
             </div>
-            <div className="p-4 overflow-auto" style={{ maxHeight: 'calc(80vh - 120px)' }}>
-              <pre className="text-xs text-green-400 bg-gray-950 p-4 rounded-lg overflow-x-auto">
+            <div className="p-5 overflow-auto" style={{ maxHeight: 'calc(80vh - 140px)' }}>
+              <pre className="text-xs text-green-400 bg-gray-950/80 p-5 rounded-2xl overflow-x-auto border border-gray-800/50 shadow-inner font-mono">
                 {getJSONPreview()}
               </pre>
             </div>
-            <div className="p-4 border-t border-gray-700 flex gap-2">
+            <div className="p-5 border-t border-gray-700/50 flex gap-3 bg-gray-900/50">
               <Button
-                onClick={handleExportJSON}
-                className="bg-green-700 hover:bg-green-600 border-green-700"
+                onClick={() => {
+                  handleExportJSON();
+                  setShowJsonModal(false);
+                }}
+                variant="success"
                 style={{
                   height: `${dimensions.modelsButtonHeight}px`,
                   fontSize: `${dimensions.fontSize}px`,
@@ -649,22 +730,32 @@ function SimpleChatBot() {
       {showPresets && (
         <>
           <div
-            className="fixed inset-0 bg-black/20"
-            style={{ zIndex: 40 }}
+            className="fixed inset-0 bg-black/60 backdrop-blur-md z-40 animate-fade-in"
             onClick={() => setShowPresets(false)}
           />
           <div
-            className="fixed bottom-0 left-0 right-0 md:bottom-auto md:top-1/2 md:left-1/2 md:-translate-x-1/2 md:-translate-y-1/2 md:w-96 bg-gray-900 border border-gray-700 rounded-t-2xl md:rounded-2xl shadow-2xl"
-            style={{ zIndex: 50 }}
+            className="fixed bottom-0 left-0 right-0 md:bottom-auto md:top-1/2 md:left-1/2 md:-translate-x-1/2 md:-translate-y-1/2 md:w-96 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 border border-gray-700/50 rounded-t-3xl md:rounded-3xl shadow-2xl z-50 animate-slide-up"
           >
-            <div className="p-4 border-b border-gray-700 flex justify-between items-center">
-              <h2 className="text-lg font-semibold text-white">Quick Presets</h2>
-              <button onClick={() => setShowPresets(false)} className="text-gray-400 hover:text-white">
-                <Plus className="h-5 w-5 rotate-45" />
+            <div className="p-5 border-b border-gray-700/50 flex justify-between items-center bg-gradient-to-r from-purple-600/10 to-pink-600/10">
+              <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                <Zap className="w-5 h-5 text-yellow-400" />
+                Quick Presets
+              </h2>
+              <button
+                onClick={() => setShowPresets(false)}
+                className="text-gray-400 hover:text-white transition-all duration-200 hover:rotate-90 transform"
+              >
+                <Plus className="h-6 w-6 rotate-45" />
               </button>
             </div>
-            <div className="p-4">
-              <p className="text-sm text-gray-400">No presets saved yet. This is a JSON file creation test.</p>
+            <div className="p-5">
+              <div className="text-center py-8">
+                <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-purple-500/30">
+                  <Sparkles className="w-8 h-8 text-white" />
+                </div>
+                <p className="text-sm text-gray-400 mb-2">No presets saved yet</p>
+                <p className="text-xs text-gray-500">Create custom presets to quickly start conversations</p>
+              </div>
             </div>
           </div>
         </>
