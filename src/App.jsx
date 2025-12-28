@@ -1,11 +1,45 @@
-import React from 'react';
-import SimpleChatBot from './SimpleChatBot';
+import { Toaster } from "@/components/ui/sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import NotFound from "@/pages/NotFound";
+import { Route, Switch } from "wouter";
+import ErrorBoundary from "./components/ErrorBoundary";
+import { ThemeProvider } from "./contexts/ThemeContext";
+import Home from "./pages/Home";
+import ChatPage from "./pages/ChatPage";
+import ConversationPage from "./pages/ConversationPage";
+import EmptyPage from "./pages/EmptyPage";
+
+function Router() {
+  return (
+    <Switch>
+      <Route path={"/"} component={EmptyPage} />
+      <Route path={"/chat"} component={ChatPage} />
+      <Route path={"/conversation"} component={ConversationPage} />
+      <Route path={"/home"} component={Home} />
+      <Route path={"/404"} component={NotFound} />
+      {/* Final fallback route */}
+      <Route component={NotFound} />
+    </Switch>
+  );
+}
+
+// NOTE: About Theme
+// - First choose a default theme according to your design style (dark or light bg), than change color palette in index.css
+// to keep consistent foreground/background color across components
+// - If you want to make theme switchable, pass `switchable` ThemeProvider and use `useTheme` hook
 
 function App() {
   return (
-    <div className="App">
-      <SimpleChatBot />
-    </div>
+    <ErrorBoundary>
+      <ThemeProvider
+        defaultTheme="dark"
+      >
+        <TooltipProvider>
+          <Toaster />
+          <Router />
+        </TooltipProvider>
+      </ThemeProvider>
+    </ErrorBoundary>
   );
 }
 
